@@ -1,374 +1,168 @@
-GetCleanData
-============
----
-title:  "Read ME"
-author: "Gek Paard"
-date:   "Wednesday, September 17, 2014"
-output: html_document
----
-
-# Description of run_analysis.R
-## Origin of the data sets 
-
-The datasets used are from: 
- Davide Anguita, Alessandro Ghio, Luca Oneto, Xavier Parra 
- and Jorge L. Reyes-Ortiz.  Human Activity Recognition on Smartphones using
- a Multiclass Hardware-Friendly Support Vector Machine. 
- International Workshop of Ambient Assisted Living (IWAAL 2012). 
- Vitoria-Gasteiz, Spain. Dec 2012
-
- This dataset is distributed AS-IS and no responsibility implied or
- explicit can be addressed  to the authors or their institutions for its
- use or misuse. Any commercial use is prohibited.
-
-## Preparation of files needed for the script
-
- The dataset are extracted in a zipfile 
- (https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip)  and are unzipped with winrar in the work space.
- The following data sets are used:
-  - 'test/X_test.txt'        : Test set, contains the observations, 
-     2947 rows, 561 columns.
-  - 'train/X_train.txt'      : Training set, contains the observations,
-     7352 rows, 561 columns.
-  - 'test/subject_test.txt'  : Test subject, contains depersonalized
-    identifications of the subject, 2947 rows, 1 column.
-  - 'train/subject_train.txt': Train subjects, contains depersonalized
-    identifications of the subject, 7352 rows, 1 column.
-  - 'test/y_test.txt'        : Test actions, contains the codes of the
-    action the subject performed, 2947 rows, 1 column.
-  - 'train/y_train.txt'      : Train actions, contains the code of the
-    action the subject performed, 7352 rows, 1 column..
-  - 'features.txt'           : Column labels, contains the column names of
-     X_test.txt and X_train.txt, 561 rows, 2 columns. 
-  - 'activity_labels.txt'    : Activity labels, contains the translation of
-     the codes used in y_test.txt and y_train.txt, 6 rows, 2 columns.
-
-## How the script works
- 
-First connect to the workspace
-### step 1 : Merges the training and test sets to create one data set
- Get the Test set 
- Get the Train set 
- Concatenate the two data frames (totalTable)
- 
-
-### step 2 : Extracts only the measurements on the mean and standard deviation for each measurement
-
- (Select the columns with refer to measurements on mean and standard
- deviations.  The documentation about the datasets states that column names
- with "mean()", "meanFreq() and "std()"  in it refer to the mean and
- standard deviation of the observations. There are also column names
- "gravityMean", "~JerkMean" etc. These columns should not be included in
- the result.  The names are in features.txt labels.)
-
- Read the "features.txt" into a dataframe namesTable
- put the column names into namesVector
- Search for the strings mentionned above and extract the row number
- These numbers are concatenated after the character "V". 
- (Columns in the concatenated dataset totalTable are named "V" 
- followed by row number)
- The result of this search are 
- Select the columns in totalTable with the now created column names and 
- put them in a data frame called selectedTable
- This selectedTable contains now only the measurements of means and
- standard deviation 
-
-### step 3 : Uses descriptive activity names to name the activities in the data set
-
- The activity codes are y_test.txt and y_train.txt, the descriptive labels
- are in activity_labels.txt.
- read the y_test set
- read the y_train set
- concatenate the two data frames (totalActivity)
- give the column of totalActivity a descriptive name (activity_Name)
- read activity_labels
- change the code in the row into the corresponding descriptive label of
- activity_labels
- 
-### step 4 : appropiately labels the data set with descriptive variable names
-
- the original column names are in namesVector (see step 2)
- colNumbers contain the the column numbers 
- select with that the current column names
- first remove the mistake in the column name (BodyBody) 
- changed these column names in (hopefully) human readable names
- replace the old column names with the changed colum names
-
-### step 5 : Creates a second, independent tidy dataset with the average of each activity and each subject
-
- select columns with mean (= "mean", "average") from the data set of step 4
- get the test and train subjects and concatenate them in the same order 
- as the observations
- label it with clarifying variable name
- rbind the three data frames, subject, act  into one data frame
- create a data frame with the means of all activities (with plyr)
- write this data frame to a txt file
+## Introduction
 
+It is now possible to collect a large amount of data about personal
+movement using activity monitoring devices such as a
+[Fitbit](http://www.fitbit.com), [Nike
+Fuelband](http://www.nike.com/us/en_us/c/nikeplus-fuelband), or
+[Jawbone Up](https://jawbone.com/up). These type of devices are part of
+the "quantified self" movement -- a group of enthusiasts who take
+measurements about themselves regularly to improve their health, to
+find patterns in their behavior, or because they are tech geeks. But
+these data remain under-utilized both because the raw data are hard to
+obtain and there is a lack of statistical methods and software for
+processing and interpreting the data.
 
+This assignment makes use of data from a personal activity monitoring
+device. This device collects data at 5 minute intervals through out the
+day. The data consists of two months of data from an anonymous
+individual collected during the months of October and November, 2012
+and include the number of steps taken in 5 minute intervals each day.
 
-# Code Book
+## Data
 
+The data for this assignment can be downloaded from the course web
+site:
 
- [1]  "subject_No"
- 
-       Depersonalised identification of subject
+* Dataset: [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip) [52K]
 
- [2]	"activity_Name"	
- 
-       Activity of subject during the measurements
+The variables included in this dataset are:
 
- [3]	"time_of_body_acceleration_signals_mean()_X-axis"
- 
-       Mean of mean time domain signal of body accelaration measurements
-       in X-axis 
+* **steps**: Number of steps taking in a 5-minute interval (missing
+    values are coded as `NA`)
 
- [4]	"time_of_body_acceleration_signals_mean()_Y-axis"	
- 
-       Mean of mean time domain signal of body accelaration measurements
-       in Y-axis
+* **date**: The date on which the measurement was taken in YYYY-MM-DD
+    format
 
- [5]	"time_of_body_acceleration_signals_mean()_Z-axis" 
- 
-       Mean of mean time domain signal of body accelaration measurements
-       in Z-axis 
+* **interval**: Identifier for the 5-minute interval in which
+    measurement was taken
 
- [6]	"time_of_gravity_acceleration_signals_mean()_X-axis" 
- 
-       Mean of mean time domain signal of gravity accelaration measurements
-       in X-axis 
 
- [7]	"time_of_gravity_acceleration_signals_mean()_Y-axis"	  
- 
-       Mean of mean time domain signal of gravity accelaration measurements
-       in Y-axis
 
- [8]	"time_of_gravity_acceleration_signals_mean()_Z-axis"
- 
-       Mean of mean time domain signal of gravity accelaration measurements
-       in Z-axis
 
- [9]	"time_of_body_acceleration_signals_jerk_signal_mean()_X-axis"   
- 
-       Mean of mean of derived jerk signals from time domain signal of body 
-       accelaration measurements in X-axis 
+The dataset is stored in a comma-separated-value (CSV) file and there
+are a total of 17,568 observations in this
+dataset.
 
-[10]	"time_of_body_acceleration_signals_jerk_signal_mean()_Y-axis" 
 
-       Mean of mean of derived jerk signals from time domain signal of body 
-       accelaration measurements in Y-axis 
+## Assignment
 
-[11]	"time_of_body_acceleration_signals_jerk_signal_mean()_Z-axis"  
+This assignment will be described in multiple parts. You will need to
+write a report that answers the questions detailed below. Ultimately,
+you will need to complete the entire assignment in a **single R
+markdown** document that can be processed by **knitr** and be
+transformed into an HTML file.
 
-       Mean of mean of derived jerk signals from time domain signal of body 
-       accelaration measurements in Z-axis 
+Throughout your report make sure you always include the code that you
+used to generate the output you present. When writing code chunks in
+the R markdown document, always use `echo = TRUE` so that someone else
+will be able to read the code. **This assignment will be evaluated via
+peer assessment so it is essential that your peer evaluators be able
+to review the code for your analysis**.
 
-[12]	"time_of_body_gyroscope_signals_mean()_X-axis" 
+For the plotting aspects of this assignment, feel free to use any
+plotting system in R (i.e., base, lattice, ggplot2)
 
-       Mean of mean time domain signal of body gyroscope measurements
-       in X-axis
+Fork/clone the [GitHub repository created for this
+assignment](http://github.com/rdpeng/RepData_PeerAssessment1). You
+will submit this assignment by pushing your completed files into your
+forked repository on GitHub. The assignment submission will consist of
+the URL to your GitHub repository and the SHA-1 commit ID for your
+repository state.
 
-[13]	"time_of_body_gyroscope_signals_mean()_Y-axis" 
+NOTE: The GitHub repository also contains the dataset for the
+assignment so you do not have to download the data separately.
 
-       Mean of mean time domain signal of body gyroscope measurements 
-       in Y-axis
 
-[14]	"time_of_body_gyroscope_signals_mean()_Z-axis"  
 
-       Mean of mean time domain signal of body gyroscope measurements
-       in Z-axis
+### Loading and preprocessing the data
 
-[15]	"time_of_body_gyroscope_signals_jerk_signal_mean()_X-axis" 
+Show any code that is needed to
 
-       Mean of mean of derived jerk signals from time domain signal of body 
-       gyroscope measurements in X-axis
+1. Load the data (i.e. `read.csv()`)
 
-[16]	"time_of_body_gyroscope_signals_jerk_signal_mean()_Y-axis"
+2. Process/transform the data (if necessary) into a format suitable for your analysis
 
-       Mean of mean of derived jerk signals from time domain signal of body 
-       gyroscope measurements in Y-axis
 
-[17]	"time_of_body_gyroscope_signals_jerk_signal_mean()_Z-axis" 
+### What is mean total number of steps taken per day?
 
-       Mean of mean of derived jerk signals from time domain signal of body 
-       gyroscope measurements in Z-axis
+For this part of the assignment, you can ignore the missing values in
+the dataset.
 
-[18]	"time_of_body_acceleration_signals_magnitude_mean()"
+1. Make a histogram of the total number of steps taken each day
 
-       Mean of mean of magnitude calculated using Euclidian norm of 
-       time domain of body accelaration measurements in X, Y and Z axis
+2. Calculate and report the **mean** and **median** total number of steps taken per day
 
-[19]	"time_of_gravity_acceleration_signals_magnitude_mean()"
 
-       Mean of mean of magnitude calculated using Euclidian norm of 
-       time domain of gravity accelaration measurements in X, Y and Z axis
+### What is the average daily activity pattern?
 
-[20]	"time_of_body_acceleration_signals_jerk_signal_magnitude_mean()"   
+1. Make a time series plot (i.e. `type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
-       Mean of mean of magnitude calculated using Euclidian norm of 
-       derived jerk signals from time domain of body accelaration
-       measurements in X, Y and Z axis 
+2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
-[21]	"time_of_body_gyroscope_signals_magnitude_mean()"  
 
-       Mean of mean of magnitude calculated using Euclidian norm of 
-       time domain of body gyroscope measurements in X, Y and Z axis 
+### Imputing missing values
 
-[22]	"time_of_body_gyroscope_signals_jerk_signal_magnitude_mean()"  
+Note that there are a number of days/intervals where there are missing
+values (coded as `NA`). The presence of missing days may introduce
+bias into some calculations or summaries of the data.
 
-       Mean of mean of magnitude calculated using Euclidian norm of 
-       derived jerk signals from time domain of body gyroscope 
-       measurements in X, Y and Z axis 
+1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with `NA`s)
 
-[23]	"frequency_of_body_acceleration_signals_mean()_X-axis"
+2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
-       Mean of mean of Fast Fourier Transformation of time domain signal
-       of body accelaration measurements in X-axis 
+3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
-[24]	"frequency_of_body_acceleration_signals_mean()_Y-axis" 
+4. Make a histogram of the total number of steps taken each day and Calculate and report the **mean** and **median** total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
-       Mean of mean of Fast Fourier Transformation of time domain signal
-       of body accelaration measurements in Y-axis 
 
-[25]	"frequency_of_body_acceleration_signals_mean()_Z-axis"
+### Are there differences in activity patterns between weekdays and weekends?
 
-       Mean of mean of Fast Fourier Transformation of time domain signal
-       of body accelaration measurements in Z-axis 
+For this part the `weekdays()` function may be of some help here. Use
+the dataset with the filled-in missing values for this part.
 
-[26]	"frequency_of_body_acceleration_signals_weighted_average_of_frequency()_X-axis"	
+1. Create a new factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
 
-       Mean of Weighted average of the frequency components of 
-       Fast Fourier Transformation of time domain signal
-       of body accelaration measurements in X-axis 
+1. Make a panel plot containing a time series plot (i.e. `type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was creating using **simulated data**:
 
-[27]	"frequency_of_body_acceleration_signals_weighted_average_of_frequency()_Y-axis"
+![Sample panel plot](instructions_fig/sample_panelplot.png) 
 
-       Mean of Weighted average of the frequency components of 
-       Fast Fourier Transformation of time domain signal
-       of body accelaration measurements in Y-axis 
 
-[28]	"frequency_of_body_acceleration_signals_weighted_average_of_frequency()_Z-axis"
+**Your plot will look different from the one above** because you will
+be using the activity monitor data. Note that the above plot was made
+using the lattice system but you can make the same version of the plot
+using any plotting system you choose.
 
-       Mean of Weighted average of the frequency components of 
-       Fast Fourier Transformation of time domain signal
-       of body accelaration measurements in Z-axis 
 
-[29]	"frequency_of_body_acceleration_signals_jerk_signal_mean()_X-axis"
+## Submitting the Assignment
 
-       Mean of mean of Fast Fourier Transformation of derived jerk signals
-       from time domain signal of body accelaration measurements in X-axis 
+To submit the assignment:
 
-[30]	"frequency_of_body_acceleration_signals_jerk_signal_mean()_Y-axis"
+1. Commit the your completed `PA1_template.Rmd` file to the `master` branch of your git repository (you should already be on the `master` branch unless you created new ones)
 
-       Mean of mean of Fast Fourier Transformation of derived jerk signals
-       from time domain signal of body accelaration measurements in Y-axis 
-       
-[31]	"frequency_of_body_acceleration_signals_jerk_signal_mean()_Z-axis"
+2. Commit your `PA1_template.md` and `PA1_template.html` files produced by processing your R markdown file with `knit2html()` function in R (from the **knitr** package)
 
-       Mean of mean of Fast Fourier Transformation of derived jerk signals
-       from time domain signal of body accelaration measurements in Z-axis
+3. If your document has figures included (it should) then they should have been placed in the `figures/` directory by default (unless you overrided the default). Add and commit the `figures/` directory to yoru git repository.
 
-[32]	"frequency_of_body_acceleration_signals_jerk_signal_weighted_average_of_frequency()_X-axis"	
+4. Push your `master` branch to GitHub.
 
-       Mean of Weighted average of the frequency components of Fast Fourier
-       Transformation of derived jerk signals from time domain signal of
-       body accelaration measurements in X-axis 
+5. Submit the URL to your GitHub repository for this assignment on the course web site.
 
-[33]	"frequency_of_body_acceleration_signals_jerk_signal_weighted_average_of_frequency()_Y-axis"
+In addition to submitting the URL for your GitHub repository, you will
+need to submit the 40 character SHA-1 hash (as string of numbers from
+0-9 and letters from a-f) that identifies the repository commit that
+contains the version of the files you want to submit. You can do this
+in GitHub by doing the following
 
-       Mean of Weighted average of the frequency components of Fast Fourier
-       Transformation of derived jerk signals from time domain signal of
-       body accelaration measurements in Y-axis 
+1. Going to your GitHub repository web page for this assignment
 
-[34]	"frequency_of_body_acceleration_signals_jerk_signal_weighted_average_of_frequency()_Z-axis"	
+2. Click on the "?? commits" link where ?? is the number of commits you have in the repository. For example, if you made a total of 10 commits to this repository, the link should say "10 commits".
 
-       Mean of Weighted average of the frequency components of Fast Fourier
-       Transformation of derived jerk signals from time domain signal of
-       body accelaration measurements in Z-axis 
+3. You will see a list of commits that you have made to this repository. The most recent commit is at the very top. If this represents the version of the files you want to submit, then just click the "copy to clipboard" button on the right hand side that should appear when you hover over the SHA-1 hash. Paste this SHA-1 hash into the course web site when you submit your assignment. If you don't want to use the most recent commit, then go down and find the commit you want and copy the SHA-1 hash.
 
-[35]	"frequency_of_body_gyroscope_signals_mean()_X-axis"	
+A valid submission will look something like (this is just an **example**!)
 
-       Mean of mean of the frequency components of Fast Fourier
-       Transformation time domain signal of body gyroscope measurements 
-       in X-axis
+```r
+https://github.com/rdpeng/RepData_PeerAssessment1
 
-[36]	"frequency_of_body_gyroscope_signals_mean()_Y-axis"	
-
-       Mean of mean of the frequency components of Fast Fourier
-       Transformation time domain signal of body gyroscope measurements 
-       in Y-axis
-
-[37]	"frequency_of_body_gyroscope_signals_mean()_Z-axis"
-
-       Mean of mean of the frequency components of Fast Fourier
-       Transformation time domain signal of body gyroscope measurements 
-       in Z-axis
-
-[38]	"frequency_of_body_gyroscope_signals_weighted_average_of_frequency()_X-axis"	
-
-       Mean of Weighted average of the frequency components of Fast Fourier
-       Transformation from time domain signal of body accelaration
-       measurements in X-axis 
-
-[39]	"frequency_of_body_gyroscope_signals_weighted_average_of_frequency()_Y-axis"
-
-       Mean of Weighted average of the frequency components of Fast Fourier
-       Transformation from time domain signal of body accelaration
-       measurements in Y-axis 
-
-[40]	"frequency_of_body_gyroscope_signals_weighted_average_of_frequency()_Z-axis"
-
-       Mean of Weighted average of the frequency components of Fast Fourier
-       Transformation from time domain signal of body accelaration
-       measurements in Z-axis 
-
-[41]	"frequency_of_body_acceleration_signals_magnitude_mean()"	
-
-       Mean of mean calculated using Euclidian norm of Fast Fourier
-       Transformation of magnitude of time domain of body accelaration 
-       measurements in X, Y and Z axis 
-
-[42]	"frequency_of_body_acceleration_signals_magnitude_weighted_average_of_frequency()"
-
-       Mean of Weighted average of the frequency components of calculated
-       using Euclidian norm of Fast Fourier Transformation of magnitude of
-       time domain of body accelaration measurements in X, Y and Z axis 
-
-[43]	"frequency_of_body_acceleration_signals_jerk_signal_magnitude_mean()"
-
-       Mean of mean of magnitude calculated using Euclidian norm of Fast
-       Fourier Transformation of magnitude of derived jerk signals from
-       time domain of body accelaration measurements in X, Y and Z axis 
-
-[44]	"frequency_of_body_acceleration_signals_jerk_signal_magnitude_weighted_average_of_frequency()"
-
-       Mean of Weighted average of the frequency components magnitude
-       calculated using Euclidian norm of Fast Fourier Transformation of
-       magnitude of derived jerk signals from time domain of body
-       accelaration measurements in X, Y and Z axis 
-
-[45]	"frequency_of_body_gyroscope_signals_magnitude_mean()"
-
-       Mean of mean calculated using Euclidian norm of Fast Fourier
-       Transformation of magnitude of time domain of body gyroscope 
-       measurements in X, Y and Z axis 
-
-[46]	"frequency_of_body_gyroscope_signals_magnitude_weighted_average_of_frequency()"
-
-       Mean of Weighted average of the frequency components of calculated
-       using Euclidian norm of Fast Fourier Transformation of magnitude of
-       time domain of body gyroscope measurements in X, Y and Z axis 
-
-[47]	"frequency_of_body_gyroscope_signals_jerk_signal_magnitude_mean()"
-
-       Mean of mean of magnitude calculated using Euclidian norm of Fast
-       Fourier Transformation of magnitude of derived jerk signals from
-       time domain of body accelaration measurements in X, Y and Z axis 
-
-[48]	"frequency_of_body_gyroscope_signals_jerk_signal_magnitude_weighted_average_of_frequency()"	
-
-       Mean of Weighted average of the frequency components magnitude
-       calculated using Euclidian norm of Fast Fourier Transformation of
-       magnitude of derived jerk signals from time domain of body
-       gyroscope measurements in X, Y and Z axis 
-
-
+7c376cc5447f11537f8740af8e07d6facc3d9645
+```
