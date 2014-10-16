@@ -5,11 +5,11 @@ Date:   Friday, October 10, 2014
 
 
 
-This document describes the exploring of a file from https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip. 
+This document describes the exploring of a file from https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip.  
 
 ## Step1  
 ### Loading and processing the data  
-The file is downloaded into the workspace on Friday, October 10, 2014. It is stored in the workspace as a comma-separated csv-file, "activity.csv". This file contains data from a personal activity monitoring device. This device collected data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken 
+The file is downloaded into the workspace on Friday, October 10, 2014. It is stored in the workspace as a zipped comma-separated csv-file, "activity.zip". The zipfile is included in the Github repository. This file contains data from a personal activity monitoring device. This device collected data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken 
 in 5 minute intervals each day.  
 The variables included in this dataset are:  
 - steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)  
