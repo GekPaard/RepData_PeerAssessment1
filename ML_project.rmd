@@ -7,7 +7,7 @@ output: html_document
 
 ## Introduction
 In the MOOC course "Practical Machine Learning" of the Johns Hopkins University the project is to investigate the Weight Lifting Exercises Dataset which is generously provided by the investigators. See their paper: Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) Stuttgart, Germany: ACM SIGCHI, 2013. See also http://groupware.les.inf.puc-rio.br/har.  
-The dataset consists of measurements by sensors on six individuals who performed the Unilateral Dumbbell Biceps Curl. The measurements were made by sensors on the forearm, biceps, belt and dumbbell. The curl had to be performed in five different ways. This manner is found in the variable "classe" in the training set. Classes, class "A" is the good one, and the classes "B", "C", "D" and "E" are wrong performances. The subjects were superviced by trained personell who made sure that the exercises where performed in the correct right or wrong manner.
+The dataset consists of measurements by sensors on six individuals who performed the Unilateral Dumbbell Biceps Curl. The measurements were made by sensors on the forearm, biceps, belt and dumbbell. The curl had to be performed in five different ways. This manner is found in the variable "classe" in the training set. Class "A" is the good one, and the classes "B", "C", "D" and "E" are wrong performances. The subjects were superviced by trained personell who made sure that the exercises where performed in the correct right or wrong manner.
 The purpose of this exercise is to predict from the measurements the manner in which they did the exercises.
 
 ##Investigation
@@ -16,12 +16,16 @@ First of all I loaded the required packages needed for this investigation.
 library(caret)
 library(randomForest)
 ```
-Then I imported the training set, which was already downloaded in the workspace
+Then I imported the training set, which was already downloaded in the workspace. I made a training set and a validation set. I also imported the testset, with which eventually the final prediction 
 ```{r}
-trainset <- read.csv("pml-training.csv")
+trainset  <- read.csv("pml-training.csv")
+inTrain   <- createDataPartition(trainset$classe, p = 3/4)[[1]]
+traindata <- trainset[ inTrain,]
+valdata   <- trainset[-inTrain,]
+testset   <- read.csv ("pml-testing.csv")
 dim(trainset)
 ```
-As can be seen there a lot of variables. Many of them wil not be relevant predictors. The first 7 variables shouldn't be relevant, because they are about who performed the exercise, on which time, the following number etc. So I removed them from the dataset. Then I set the abundance of NA's to zero's, because randomForest can't cope with NA's. (I choose randomForest because the train function of caret takes a very long time.) Then I removed all the variables with little or no variation from the dataset. They will not be important predictors. 
+As can be seen there a lot of variables. Many of them wil not be relevant predictors. The first 7 variables can not be relevant, because they are about who performed the exercise, on which time, the following number etc. So I removed them from the training set. Then I set the abundance of NA's to zero's, because randomForest can't cope with NA's. (I choose randomForest because the train function of caret takes a very long time.) Then I removed all the variables with little or no variation from the dataset. They can't not be important predictors. 
 ```{r}
 traindata   <- trainset
 traindata   <- traindata[,-(1:7)]
@@ -72,63 +76,65 @@ traindata <- traindata[,-4]
 traindata <- traindata[,-3]
 dim(traindata)
 ```
-There are now 38 potential predictors available, which is fortunate because the function randomForest can only handle 53 predictors.  
-A check if the remaining variables are good predictors:  
+There are now 38 potential predictors available, which is fortunate because the function randomForest can only handle 53 predictors. I use random forest, because it has a high accuray. I only made a models with randomForest because random forest with train takes hours to make a model.    
+I checked with the validation set (and confusionMatrix) if the model is good.  
 ```{r}
-modFit1 <- randomForest(classe ~ ., data=traindata)
-predictionClassedata  <- predict(modFit1, trainset)
-confusionMatrix(predictionClassedata, trainset$classe)
-varImp(modFit1)
-
+set.seed(3436)
+modFit1rF <- randomForest(classe ~ ., data=traindata)
+predictionClassedata  <- predict(modFit1rF, valdata)
+confusionMatrix(predictionClassedata, valdata$classe)
+varImp(modFit1rF)
 ```
-  
-This seems like a perfect fit!  
-The function varImpPlot shows the importance of the predictors. I want to check if als the variables are needed for a good prediction. This time I will use only the variables with an importance of 500 and higher:
+The accuracy is very good. Not shown here, but I got the same prediction and accuracy with the train function with method "rf". The function varImp shows the importance of the predictors. I want to check if als the variables are needed for a good prediction. This time I will use only the variables with an importance of 500 and higher from the train function:
 ```{r}
-modFit2 <- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt           +
-                                 magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x + magnet_belt_y +
-                                 magnet_belt_z + accel_dumbbell_y + roll_dumbbell, data=traindata)
-predictionClassedata  <- predict(modFit2, trainset)
-confusionMatrix(predictionClassedata, trainset$classe)
-varImp(modFit2)
-
+modFit2rF <- randomForest(classe ~ roll_belt + magnet_dumbbell_z +  pitch_forearm + pitch_belt          + 
+                                   magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x + magnet_belt_z +
+                                   magnet_belt_y + accel_dumbbell_y, 
+                                   data=traindata)
+predictionClassedata  <- predict(modFit2rF, valdata)
+confusionMatrix(predictionClassedata, valdata$classe)
+varImp(modFit2rF)
 ```
-  
 This still looks like a perfect fit. Now I remove the lowest important predictor, magnet-belt-y, from the predictors.  
 ```{r}
-modFit3 <- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt  +
-                                 magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x        + 
-                                 magnet_belt_z + accel_dumbbell_y + roll_dumbbell, data=traindata)
-predictionClassedata  <- predict(modFit3, trainset)
-confusionMatrix(predictionClassedata, trainset$classe)
-varImp(modFit3)
+modFit3rF <- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt +
+                                   magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x       + 
+                                   magnet_belt_z + accel_dumbbell_y,
+                                   data=traindata)
+predictionClassedata  <- predict(modFit3rF, valdata)
+confusionMatrix(predictionClassedata, valdata$classe)
+varImp(modFit3rF)
+```
+The function randomForest still gives a perfect model. I removed now the magnet-belt-z from the predictors.
+```{r}
+modFit4rF <- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt +
+                                   magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x       + 
+                                   accel_dumbbell_y,
+                                   data=traindata)
+predictionClassedata  <- predict(modFit4rF, valdata)
+confusionMatrix(predictionClassedata, valdata$classe)
+varImp(modFit4rF)
 
 ```
-  
-This also looks like a perfect fit. Now I remove again the lowest important predictor of this set, roll-dumbbell, from the predictors.  
+magnet-dumbbell-x is now the least important predictor. I removed it from the list of predictors.
 ```{r}
-modFit4 <- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt +
-                                 magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x       + 
-                                 magnet_belt_z + accel_dumbbell_y , data=traindata)
-predictionClassedata  <- predict(modFit4, trainset)
-confusionMatrix(predictionClassedata, trainset$classe)
-varImp(modFit4)
+modFit5rF <- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt +
+                                   magnet_dumbbell_y + roll_forearm + accel_dumbbell_y,
+                                   data=traindata)
+predictionClassedata  <- predict(modFit5rF, valdata)
+confusionMatrix(predictionClassedata, valdata$classe)
+varImp(modFit5rF)
+```
+I predicted with the first and the last model the outcome on the testset. 
+```{r}
+#check on testset
+predict(modFit1rF, testset)
+predict(modFit5rF, testset)
+```
+They appear to be the same.  
 
-```
-  
-This also looks like a perfect fit. Again I remove the lowest important predictor of this set, magnet-dumbbell-x, from the predictors.
-```{r}
-modFit5 <- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt +
-                          magnet_dumbbell_y + roll_forearm + magnet_belt_z + accel_dumbbell_y , data=traindata)
-predictionClassedata  <- predict(modFit5, trainset)
-confusionMatrix(predictionClassedata, trainset$classe)
-```
-  
-This isn't a perfect fit anymore. So I use modFit4 for the prediction of the classes of testdata, which I also placed in the workspace. 
-```{r}
-testdata <- read.csv ("pml-testing.csv")
-predict(modFit4, testdata)
-```
 
 #Conclusion
-I selected nine variables out of 159 possible ones, and reached an accuracy of 100%. So the expected out-of-sample error should be near 0%. 
+I selected seven variables out of 159 possible ones, and had eventually an accuracy of 99.8%. The expected out-of-sample error should be about 0.2%. The result gave me 20 points.  
+.    
+.   

@@ -60,7 +60,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>In the MOOC course “Practical Machine Learning” of the Johns Hopkins University the project is to investigate the Weight Lifting Exercises Dataset which is generously provided by the investigators. See their paper: Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human ’13) Stuttgart, Germany: ACM SIGCHI, 2013. See also <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>.<br />The dataset consists of measurements by sensors on six individuals who performed the Unilateral Dumbbell Biceps Curl. The measurements were made by sensors on the forearm, biceps, belt and dumbbell. The curl had to be performed in five different ways. This manner is found in the variable “classe” in the training set. Classes, class “A” is the good one, and the classes “B”, “C”, “D” and “E” are wrong performances. The subjects were superviced by trained personell who made sure that the exercises where performed in the correct right or wrong manner. The purpose of this exercise is to predict from the measurements the manner in which they did the exercises.</p>
+<p>In the MOOC course “Practical Machine Learning” of the Johns Hopkins University the project is to investigate the Weight Lifting Exercises Dataset which is generously provided by the investigators. See their paper: Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human ’13) Stuttgart, Germany: ACM SIGCHI, 2013. See also <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>.<br />The dataset consists of measurements by sensors on six individuals who performed the Unilateral Dumbbell Biceps Curl. The measurements were made by sensors on the forearm, biceps, belt and dumbbell. The curl had to be performed in five different ways. This manner is found in the variable “classe” in the training set. Class “A” is the good one, and the classes “B”, “C”, “D” and “E” are wrong performances. The subjects were superviced by trained personell who made sure that the exercises where performed in the correct right or wrong manner. The purpose of this exercise is to predict from the measurements the manner in which they did the exercises.</p>
 </div>
 <div id="investigation" class="section level2">
 <h2>Investigation</h2>
@@ -71,11 +71,15 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <pre class="r"><code>library(randomForest)</code></pre>
 <pre><code>## randomForest 4.6-10
 ## Type rfNews() to see new features/changes/bug fixes.</code></pre>
-<p>Then I imported the training set, which was already downloaded in the workspace</p>
-<pre class="r"><code>trainset &lt;- read.csv(&quot;pml-training.csv&quot;)
+<p>Then I imported the training set, which was already downloaded in the workspace. I made a training set and a validation set. I also imported the testset, with which eventually the final prediction</p>
+<pre class="r"><code>trainset  &lt;- read.csv(&quot;pml-training.csv&quot;)
+inTrain   &lt;- createDataPartition(trainset$classe, p = 3/4)[[1]]
+traindata &lt;- trainset[ inTrain,]
+valdata   &lt;- trainset[-inTrain,]
+testset   &lt;- read.csv (&quot;pml-testing.csv&quot;)
 dim(trainset)</code></pre>
 <pre><code>## [1] 19622   160</code></pre>
-<p>As can be seen there a lot of variables. Many of them wil not be relevant predictors. The first 7 variables shouldn’t be relevant, because they are about who performed the exercise, on which time, the following number etc. So I removed them from the dataset. Then I set the abundance of NA’s to zero’s, because randomForest can’t cope with NA’s. (I choose randomForest because the train function of caret takes a very long time.) Then I removed all the variables with little or no variation from the dataset. They will not be important predictors.</p>
+<p>As can be seen there a lot of variables. Many of them wil not be relevant predictors. The first 7 variables can not be relevant, because they are about who performed the exercise, on which time, the following number etc. So I removed them from the training set. Then I set the abundance of NA’s to zero’s, because randomForest can’t cope with NA’s. (I choose randomForest because the train function of caret takes a very long time.) Then I removed all the variables with little or no variation from the dataset. They can’t not be important predictors.</p>
 <pre class="r"><code>traindata   &lt;- trainset
 traindata   &lt;- traindata[,-(1:7)]
 traindata[is.na(traindata)] &lt;- 0
@@ -162,29 +166,30 @@ traindata &lt;- traindata[,-4]
 traindata &lt;- traindata[,-3]
 dim(traindata)</code></pre>
 <pre><code>## [1] 19622    39</code></pre>
-<p>There are now 38 potential predictors available, which is fortunate because the function randomForest can only handle 53 predictors.<br />A check if the remaining variables are good predictors:</p>
-<pre class="r"><code>modFit1 &lt;- randomForest(classe ~ ., data=traindata)
-predictionClassedata  &lt;- predict(modFit1, trainset)
-confusionMatrix(predictionClassedata, trainset$classe)</code></pre>
+<p>There are now 38 potential predictors available, which is fortunate because the function randomForest can only handle 53 predictors. I use random forest, because it has a high accuray. I only made a models with randomForest because random forest with train takes hours to make a model.<br />I checked with the validation set (and confusionMatrix) if the model is good.</p>
+<pre class="r"><code>set.seed(3436)
+modFit1rF &lt;- randomForest(classe ~ ., data=traindata)
+predictionClassedata  &lt;- predict(modFit1rF, valdata)
+confusionMatrix(predictionClassedata, valdata$classe)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 5580    0    0    0    0
-##          B    0 3797    0    0    0
-##          C    0    0 3422    0    0
-##          D    0    0    0 3216    0
-##          E    0    0    0    0 3607
+##          A 1395    0    0    0    0
+##          B    0  949    0    0    0
+##          C    0    0  855    0    0
+##          D    0    0    0  804    0
+##          E    0    0    0    0  901
 ## 
 ## Overall Statistics
-##                                 
-##                Accuracy : 1     
-##                  95% CI : (1, 1)
-##     No Information Rate : 0.284 
-##     P-Value [Acc &gt; NIR] : &lt;2e-16
-##                                 
-##                   Kappa : 1     
-##  Mcnemar's Test P-Value : NA    
+##                                     
+##                Accuracy : 1         
+##                  95% CI : (0.999, 1)
+##     No Information Rate : 0.284     
+##     P-Value [Acc &gt; NIR] : &lt;2e-16    
+##                                     
+##                   Kappa : 1         
+##  Mcnemar's Test P-Value : NA        
 ## 
 ## Statistics by Class:
 ## 
@@ -197,71 +202,72 @@ confusionMatrix(predictionClassedata, trainset$classe)</code></pre>
 ## Detection Rate          0.284    0.194    0.174    0.164    0.184
 ## Detection Prevalence    0.284    0.194    0.174    0.164    0.184
 ## Balanced Accuracy       1.000    1.000    1.000    1.000    1.000</code></pre>
-<pre class="r"><code>varImp(modFit1)</code></pre>
+<pre class="r"><code>varImp(modFit1rF)</code></pre>
 <pre><code>##                      Overall
-## roll_belt            1783.46
-## pitch_belt            868.11
-## gyros_belt_x          132.30
-## gyros_belt_y          159.29
-## gyros_belt_z          406.17
-## magnet_belt_y         511.76
-## magnet_belt_z         534.42
-## roll_arm              391.56
-## pitch_arm             237.96
-## yaw_arm               310.44
-## total_accel_arm       138.57
-## gyros_arm_x           194.62
-## gyros_arm_z            79.25
-## accel_arm_x           328.96
-## accel_arm_y           202.75
-## accel_arm_z           172.49
-## magnet_arm_y          305.83
-## roll_dumbbell         486.06
-## pitch_dumbbell        254.81
-## yaw_dumbbell          356.62
-## total_accel_dumbbell  368.38
-## gyros_dumbbell_y      328.66
-## accel_dumbbell_y      532.26
-## magnet_dumbbell_x     598.78
-## magnet_dumbbell_y     820.09
-## magnet_dumbbell_z     918.68
-## roll_forearm          780.09
-## pitch_forearm         900.27
-## yaw_forearm           231.62
-## total_accel_forearm   136.96
-## gyros_forearm_x       103.40
-## gyros_forearm_z       119.10
-## accel_forearm_x       402.52
-## accel_forearm_y       191.36
-## accel_forearm_z       314.20
-## magnet_forearm_x      268.63
-## magnet_forearm_y      271.15
-## magnet_forearm_z      371.88</code></pre>
-<p>This seems like a perfect fit!<br />The function varImpPlot shows the importance of the predictors. I want to check if als the variables are needed for a good prediction. This time I will use only the variables with an importance of 500 and higher:</p>
-<pre class="r"><code>modFit2 &lt;- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt           +
-                                 magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x + magnet_belt_y +
-                                 magnet_belt_z + accel_dumbbell_y + roll_dumbbell, data=traindata)
-predictionClassedata  &lt;- predict(modFit2, trainset)
-confusionMatrix(predictionClassedata, trainset$classe)</code></pre>
+## roll_belt            1722.50
+## pitch_belt            883.43
+## gyros_belt_x          131.36
+## gyros_belt_y          151.24
+## gyros_belt_z          413.85
+## magnet_belt_y         530.66
+## magnet_belt_z         543.23
+## roll_arm              404.20
+## pitch_arm             233.25
+## yaw_arm               327.66
+## total_accel_arm       142.94
+## gyros_arm_x           196.24
+## gyros_arm_z            77.79
+## accel_arm_x           330.69
+## accel_arm_y           210.34
+## accel_arm_z           180.53
+## magnet_arm_y          319.14
+## roll_dumbbell         479.84
+## pitch_dumbbell        258.74
+## yaw_dumbbell          346.02
+## total_accel_dumbbell  392.29
+## gyros_dumbbell_y      326.33
+## accel_dumbbell_y      522.23
+## magnet_dumbbell_x     622.86
+## magnet_dumbbell_y     803.40
+## magnet_dumbbell_z     945.11
+## roll_forearm          756.05
+## pitch_forearm         892.48
+## yaw_forearm           224.16
+## total_accel_forearm   142.42
+## gyros_forearm_x       103.38
+## gyros_forearm_z       118.90
+## accel_forearm_x       383.12
+## accel_forearm_y       183.63
+## accel_forearm_z       323.25
+## magnet_forearm_x      267.53
+## magnet_forearm_y      273.43
+## magnet_forearm_z      348.91</code></pre>
+<p>The accuracy is very good. Not shown here, but I got the same prediction and accuracy with the train function with method “rf”. The function varImp shows the importance of the predictors. I want to check if als the variables are needed for a good prediction. This time I will use only the variables with an importance of 500 and higher from the train function:</p>
+<pre class="r"><code>modFit2rF &lt;- randomForest(classe ~ roll_belt + magnet_dumbbell_z +  pitch_forearm + pitch_belt          + 
+                                   magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x + magnet_belt_z +
+                                   magnet_belt_y + accel_dumbbell_y, 
+                                   data=traindata)
+predictionClassedata  &lt;- predict(modFit2rF, valdata)
+confusionMatrix(predictionClassedata, valdata$classe)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 5580    0    0    0    0
-##          B    0 3797    0    0    0
-##          C    0    0 3422    0    0
-##          D    0    0    0 3216    0
-##          E    0    0    0    0 3607
+##          A 1395    0    0    0    0
+##          B    0  949    0    0    0
+##          C    0    0  855    0    0
+##          D    0    0    0  804    0
+##          E    0    0    0    0  901
 ## 
 ## Overall Statistics
-##                                 
-##                Accuracy : 1     
-##                  95% CI : (1, 1)
-##     No Information Rate : 0.284 
-##     P-Value [Acc &gt; NIR] : &lt;2e-16
-##                                 
-##                   Kappa : 1     
-##  Mcnemar's Test P-Value : NA    
+##                                     
+##                Accuracy : 1         
+##                  95% CI : (0.999, 1)
+##     No Information Rate : 0.284     
+##     P-Value [Acc &gt; NIR] : &lt;2e-16    
+##                                     
+##                   Kappa : 1         
+##  Mcnemar's Test P-Value : NA        
 ## 
 ## Statistics by Class:
 ## 
@@ -274,44 +280,44 @@ confusionMatrix(predictionClassedata, trainset$classe)</code></pre>
 ## Detection Rate          0.284    0.194    0.174    0.164    0.184
 ## Detection Prevalence    0.284    0.194    0.174    0.164    0.184
 ## Balanced Accuracy       1.000    1.000    1.000    1.000    1.000</code></pre>
-<pre class="r"><code>varImp(modFit2)</code></pre>
+<pre class="r"><code>varImp(modFit2rF)</code></pre>
 <pre><code>##                   Overall
-## roll_belt          2750.5
-## magnet_dumbbell_z  1561.6
-## pitch_forearm      1752.4
-## pitch_belt         1674.4
-## magnet_dumbbell_y  1344.1
-## roll_forearm       1369.5
-## magnet_dumbbell_x  1098.2
-## magnet_belt_y       931.8
-## magnet_belt_z      1005.4
-## accel_dumbbell_y   1071.3
-## roll_dumbbell       950.0</code></pre>
+## roll_belt          2873.4
+## magnet_dumbbell_z  1648.2
+## pitch_forearm      1785.8
+## pitch_belt         1793.6
+## magnet_dumbbell_y  1400.6
+## roll_forearm       1462.9
+## magnet_dumbbell_x  1210.3
+## magnet_belt_z      1066.8
+## magnet_belt_y       960.3
+## accel_dumbbell_y   1310.3</code></pre>
 <p>This still looks like a perfect fit. Now I remove the lowest important predictor, magnet-belt-y, from the predictors.</p>
-<pre class="r"><code>modFit3 &lt;- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt  +
-                                 magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x        + 
-                                 magnet_belt_z + accel_dumbbell_y + roll_dumbbell, data=traindata)
-predictionClassedata  &lt;- predict(modFit3, trainset)
-confusionMatrix(predictionClassedata, trainset$classe)</code></pre>
+<pre class="r"><code>modFit3rF &lt;- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt +
+                                   magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x       + 
+                                   magnet_belt_z + accel_dumbbell_y,
+                                   data=traindata)
+predictionClassedata  &lt;- predict(modFit3rF, valdata)
+confusionMatrix(predictionClassedata, valdata$classe)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 5580    0    0    0    0
-##          B    0 3797    0    0    0
-##          C    0    0 3422    0    0
-##          D    0    0    0 3216    0
-##          E    0    0    0    0 3607
+##          A 1395    0    0    0    0
+##          B    0  949    0    0    0
+##          C    0    0  855    0    0
+##          D    0    0    0  804    0
+##          E    0    0    0    0  901
 ## 
 ## Overall Statistics
-##                                 
-##                Accuracy : 1     
-##                  95% CI : (1, 1)
-##     No Information Rate : 0.284 
-##     P-Value [Acc &gt; NIR] : &lt;2e-16
-##                                 
-##                   Kappa : 1     
-##  Mcnemar's Test P-Value : NA    
+##                                     
+##                Accuracy : 1         
+##                  95% CI : (0.999, 1)
+##     No Information Rate : 0.284     
+##     P-Value [Acc &gt; NIR] : &lt;2e-16    
+##                                     
+##                   Kappa : 1         
+##  Mcnemar's Test P-Value : NA        
 ## 
 ## Statistics by Class:
 ## 
@@ -324,80 +330,33 @@ confusionMatrix(predictionClassedata, trainset$classe)</code></pre>
 ## Detection Rate          0.284    0.194    0.174    0.164    0.184
 ## Detection Prevalence    0.284    0.194    0.174    0.164    0.184
 ## Balanced Accuracy       1.000    1.000    1.000    1.000    1.000</code></pre>
-<pre class="r"><code>varImp(modFit3)</code></pre>
+<pre class="r"><code>varImp(modFit3rF)</code></pre>
 <pre><code>##                   Overall
-## roll_belt          3043.4
-## magnet_dumbbell_z  1629.4
-## pitch_forearm      1750.5
-## pitch_belt         1799.9
-## magnet_dumbbell_y  1409.3
-## roll_forearm       1449.7
-## magnet_dumbbell_x  1117.1
-## magnet_belt_z      1234.8
-## accel_dumbbell_y   1097.8
-## roll_dumbbell       977.2</code></pre>
-<p>This also looks like a perfect fit. Now I remove again the lowest important predictor of this set, roll-dumbbell, from the predictors.</p>
-<pre class="r"><code>modFit4 &lt;- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt +
-                                 magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x       + 
-                                 magnet_belt_z + accel_dumbbell_y , data=traindata)
-predictionClassedata  &lt;- predict(modFit4, trainset)
-confusionMatrix(predictionClassedata, trainset$classe)</code></pre>
-<pre><code>## Confusion Matrix and Statistics
-## 
-##           Reference
-## Prediction    A    B    C    D    E
-##          A 5580    0    0    0    0
-##          B    0 3797    0    0    0
-##          C    0    0 3422    0    0
-##          D    0    0    0 3216    0
-##          E    0    0    0    0 3607
-## 
-## Overall Statistics
-##                                 
-##                Accuracy : 1     
-##                  95% CI : (1, 1)
-##     No Information Rate : 0.284 
-##     P-Value [Acc &gt; NIR] : &lt;2e-16
-##                                 
-##                   Kappa : 1     
-##  Mcnemar's Test P-Value : NA    
-## 
-## Statistics by Class:
-## 
-##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity             1.000    1.000    1.000    1.000    1.000
-## Specificity             1.000    1.000    1.000    1.000    1.000
-## Pos Pred Value          1.000    1.000    1.000    1.000    1.000
-## Neg Pred Value          1.000    1.000    1.000    1.000    1.000
-## Prevalence              0.284    0.194    0.174    0.164    0.184
-## Detection Rate          0.284    0.194    0.174    0.164    0.184
-## Detection Prevalence    0.284    0.194    0.174    0.164    0.184
-## Balanced Accuracy       1.000    1.000    1.000    1.000    1.000</code></pre>
-<pre class="r"><code>varImp(modFit4)</code></pre>
-<pre><code>##                   Overall
-## roll_belt            3216
-## magnet_dumbbell_z    1691
-## pitch_forearm        1845
-## pitch_belt           1917
+## roll_belt            3213
+## magnet_dumbbell_z    1698
+## pitch_forearm        1859
+## pitch_belt           1910
 ## magnet_dumbbell_y    1470
-## roll_forearm         1517
-## magnet_dumbbell_x    1214
-## magnet_belt_z        1261
-## accel_dumbbell_y     1378</code></pre>
-<p>This also looks like a perfect fit. Again I remove the lowest important predictor of this set, magnet-dumbbell-x, from the predictors.</p>
-<pre class="r"><code>modFit5 &lt;- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt +
-                          magnet_dumbbell_y + roll_forearm + magnet_belt_z + accel_dumbbell_y , data=traindata)
-predictionClassedata  &lt;- predict(modFit5, trainset)
-confusionMatrix(predictionClassedata, trainset$classe)</code></pre>
+## roll_forearm         1492
+## magnet_dumbbell_x    1200
+## magnet_belt_z        1264
+## accel_dumbbell_y     1402</code></pre>
+<p>The function randomForest still gives a perfect model. I removed now the magnet-belt-z from the predictors.</p>
+<pre class="r"><code>modFit4rF &lt;- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt +
+                                   magnet_dumbbell_y + roll_forearm + magnet_dumbbell_x       + 
+                                   accel_dumbbell_y,
+                                   data=traindata)
+predictionClassedata  &lt;- predict(modFit4rF, valdata)
+confusionMatrix(predictionClassedata, valdata$classe)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 5579    1    0    0    0
-##          B    0 3792    1    0    0
-##          C    1    4 3419    0    0
-##          D    0    0    2 3216    0
-##          E    0    0    0    0 3607
+##          A 1395    0    0    0    0
+##          B    0  948    0    0    0
+##          C    0    1  855    1    0
+##          D    0    0    0  803    0
+##          E    0    0    0    0  901
 ## 
 ## Overall Statistics
 ##                                     
@@ -412,24 +371,85 @@ confusionMatrix(predictionClassedata, trainset$classe)</code></pre>
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity             1.000    0.999    0.999    1.000    1.000
+## Sensitivity             1.000    0.999    1.000    0.999    1.000
 ## Specificity             1.000    1.000    1.000    1.000    1.000
-## Pos Pred Value          1.000    1.000    0.999    0.999    1.000
+## Pos Pred Value          1.000    1.000    0.998    1.000    1.000
 ## Neg Pred Value          1.000    1.000    1.000    1.000    1.000
 ## Prevalence              0.284    0.194    0.174    0.164    0.184
 ## Detection Rate          0.284    0.193    0.174    0.164    0.184
-## Detection Prevalence    0.284    0.193    0.174    0.164    0.184
-## Balanced Accuracy       1.000    0.999    0.999    1.000    1.000</code></pre>
-<p>This isn’t a perfect fit anymore. So I use modFit4 for the prediction of the classes of testdata, which I also placed in the workspace.</p>
-<pre class="r"><code>testdata &lt;- read.csv (&quot;pml-testing.csv&quot;)
-predict(modFit4, testdata)</code></pre>
+## Detection Prevalence    0.284    0.193    0.175    0.164    0.184
+## Balanced Accuracy       1.000    0.999    1.000    0.999    1.000</code></pre>
+<pre class="r"><code>varImp(modFit4rF)</code></pre>
+<pre><code>##                   Overall
+## roll_belt            3382
+## magnet_dumbbell_z    1843
+## pitch_forearm        1836
+## pitch_belt           2136
+## magnet_dumbbell_y    1598
+## roll_forearm         1609
+## magnet_dumbbell_x    1392
+## accel_dumbbell_y     1516</code></pre>
+<p>magnet-dumbbell-x is now the least important predictor. I removed it from the list of predictors.</p>
+<pre class="r"><code>modFit5rF &lt;- randomForest(classe ~ roll_belt + magnet_dumbbell_z + pitch_forearm + pitch_belt +
+                                   magnet_dumbbell_y + roll_forearm + accel_dumbbell_y,
+                                   data=traindata)
+predictionClassedata  &lt;- predict(modFit5rF, valdata)
+confusionMatrix(predictionClassedata, valdata$classe)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1395    5    0    0    0
+##          B    0  940    0    0    0
+##          C    0    4  855    0    0
+##          D    0    0    0  804    0
+##          E    0    0    0    0  901
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.998         
+##                  95% CI : (0.997, 0.999)
+##     No Information Rate : 0.284         
+##     P-Value [Acc &gt; NIR] : &lt;2e-16        
+##                                         
+##                   Kappa : 0.998         
+##  Mcnemar's Test P-Value : NA            
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             1.000    0.991    1.000    1.000    1.000
+## Specificity             0.999    1.000    0.999    1.000    1.000
+## Pos Pred Value          0.996    1.000    0.995    1.000    1.000
+## Neg Pred Value          1.000    0.998    1.000    1.000    1.000
+## Prevalence              0.284    0.194    0.174    0.164    0.184
+## Detection Rate          0.284    0.192    0.174    0.164    0.184
+## Detection Prevalence    0.285    0.192    0.175    0.164    0.184
+## Balanced Accuracy       0.999    0.995    1.000    1.000    1.000</code></pre>
+<pre class="r"><code>varImp(modFit5rF)</code></pre>
+<pre><code>##                   Overall
+## roll_belt            3538
+## magnet_dumbbell_z    2045
+## pitch_forearm        2002
+## pitch_belt           2247
+## magnet_dumbbell_y    2011
+## roll_forearm         1756
+## accel_dumbbell_y     1652</code></pre>
+<p>I predicted with the first and the last model the outcome on the testset.</p>
+<pre class="r"><code>#check on testset
+predict(modFit1rF, testset)</code></pre>
 <pre><code>##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
 ##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
 ## Levels: A B C D E</code></pre>
+<pre class="r"><code>predict(modFit5rF, testset)</code></pre>
+<pre><code>##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
+## Levels: A B C D E</code></pre>
+<p>They appear to be the same.</p>
 </div>
 <div id="conclusion" class="section level1">
 <h1>Conclusion</h1>
-<p>I selected nine variables out of 159 possible ones, and reached an accuracy of 100%. So the expected out-of-sample error should be near 0%.</p>
+<p>I selected seven variables out of 159 possible ones, and had eventually an accuracy of 99.8%. The expected out-of-sample error should be about 0.2%. The result gave me 20 points.<br />.<br />.</p>
 </div>
 
 
